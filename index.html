@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸运抽奖</title>
+    <style>
+        body {
+            font-family: '微软雅黑', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e5ec 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 600px;
+            margin-top: 50px;
+            padding: 3rem 2rem;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1::before {
+            content: "🏆";
+            font-size: 2.5rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        #drawBtn {
+            background: linear-gradient(45deg, #2196F3 0%, #42A5F5 100%);
+            color: white;
+            width: 100%;
+            margin: 1rem 0;
+            padding: 1.2rem;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        #stopBtn {
+            background: linear-gradient(45deg, #ff5722 0%, #ff7043 100%);
+            color: white;
+            width: 100%;
+            margin: 1rem 0;
+            padding: 1.2rem;
+            box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+            display: none; /* 初始隐藏停止按钮 */
+        }
+
+        #result {
+            font-size: 2.5rem;
+            color: #ff5722;
+            font-weight: bold;
+            text-align: center;
+            margin: 2rem 0;
+            min-height: 80px;
+            padding: 1rem;
+            border-radius: 10px;
+            background: #fff3e0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            /* 新增初始变换 */
+            transform: scale(1);
+        }
+
+        /* 新增抽奖结果动画 */
+        @keyframes resultBounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.2); }
+            60% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        #result.animating {
+            animation: resultBounce 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>幸运大抽奖</h1>
+
+        <div id="result">抽奖</div>
+
+        <button id="drawBtn">开始抽奖！</button>
+        <button id="stopBtn">停止抽奖！</button> <!-- 新增停止按钮 -->
+    </div>
+
+    <script>
+        const participants = [];
+        const resultDiv = document.getElementById('result');
+        let drawTimer = null; // 保存定时器引用
+
+        // 页面加载时读取固定文件（未修改）
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('participants.txt');
+                if (!response.ok) throw new Error('文件不存在或无法访问');
+                const content = await response.text();
+                const names = content.split(/\r?\n/).map(name => name.trim()).filter(name => name);
+                participants.push(...names);
+            } catch (error) {
+                alert(`读取名单文件失败：${error.message}`);
+            }
+        });
+
+        // 开始抽奖按钮点击事件
+        document.getElementById('drawBtn').addEventListener('click', () => {
+            if (participants.length === 0) {
+                alert('请检查participants.txt文件是否存在！');
+                return;
+            }
+            
+            // 显示停止按钮，隐藏开始按钮
+            document.getElementById('drawBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+
+            // 启动抽奖循环
+            drawTimer = setInterval(() => {
+                resultDiv.textContent = participants[Math.floor(Math.random() * participants.length)];
+            }, 10); // 加快切换速度（50ms/次）
+        });
+
+        // 停止抽奖按钮点击事件（修改）
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            if (drawTimer) {
+                clearInterval(drawTimer); // 清除定时器
+                drawTimer = null;
+                
+                // 显示开始按钮，隐藏停止按钮
+                document.getElementById('drawBtn').style.display = 'block';
+                document.getElementById('stopBtn').style.display = 'none';
+
+                // 触发结果动画
+                resultDiv.classList.add('animating');
+                // 动画结束后移除类（避免重复触发）
+                resultDiv.addEventListener('animationend', () => {
+                    resultDiv.classList.remove('animating');
+                }, { once: true });
+            }
+        });
+    </script>
+</body>
+</html>
